@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: KCL 2.x integration
+    batchingEnabled: true
+
+
+aws:
+  region:
+    static: us-east-1
+  kinesis:
+    streamName: _your_stream_name_
+    consumerName: _your_consumer_name_
+
