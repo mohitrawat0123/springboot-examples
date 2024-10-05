@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: sqs-integration
+
+aws:
+  region:
+    static: us-east-1
+  sqs:
+    name: _your_queue_name_
+    url: _your_queue_url_
