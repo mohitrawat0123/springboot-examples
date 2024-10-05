@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
 
@@ -16,13 +17,14 @@ import javax.validation.Valid;
  * @author mohit.rawat
  */
 @Log4j2
+@RestController
 @RequestMapping("/dev")
 @RequiredArgsConstructor
 public class DevController {
 
     private final KinesisProducer kinesisProducer;
 
-    @PostMapping
+    @PostMapping("/send")
     public ResponseEntity<?> addEvent(@Valid @RequestBody EventRequestDTO requestDTO) {
         if (!kinesisProducer.addEvent(requestDTO.getPartitionKey(), requestDTO.getData())) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Pls check logs...");

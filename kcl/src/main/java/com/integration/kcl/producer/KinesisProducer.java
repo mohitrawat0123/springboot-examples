@@ -13,6 +13,7 @@ import software.amazon.awssdk.services.kinesis.model.PutRecordsRequest;
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
 
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.IntStream;
@@ -53,6 +54,23 @@ public class KinesisProducer {
             return false;
         }
         return true;
+    }
+
+    public void addEvents(Map<String, String> data) {
+        var putRecordsRequestList = data.entrySet().stream().map(entry ->
+                PutRecordsRequestEntry.builder()
+                        .partitionKey(entry.getKey())
+                        .data(SdkBytes.fromByteArray(entry.getValue().getBytes()))
+                        .build()).toList();
+        try {
+            kinesisAsyncClient.putRecords(PutRecordsRequest.builder()
+                    .records(putRecordsRequestList)
+                    .streamName(streamName)
+                    .build()).get();
+            log.info("Added batch into Kinesis...");
+        } catch (InterruptedException | ExecutionException ex) {
+            log.error("Exception occurred. Ex: ", ex);
+        }
     }
 
     @Scheduled(fixedRate = 120000)

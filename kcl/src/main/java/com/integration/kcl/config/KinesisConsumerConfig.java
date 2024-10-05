@@ -12,6 +12,8 @@ import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
 import software.amazon.kinesis.common.ConfigsBuilder;
 import software.amazon.kinesis.coordinator.Scheduler;
 import software.amazon.kinesis.metrics.MetricsLevel;
+import software.amazon.kinesis.retrieval.fanout.FanOutConfig;
+import software.amazon.kinesis.retrieval.polling.PollingConfig;
 
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -52,6 +54,14 @@ public class KinesisConsumerConfig {
                 .maxInitializationAttempts(5)
                 .schedulerInitializationBackoffTimeMillis(5000L);
 
+        //NOTE: Default is fanout Config. If you don't need that, you need to explicitly configure it.
+        var retrievalConfig = configsBuilder.retrievalConfig();
+
+/*
+        var retrievalConfig = configsBuilder.retrievalConfig()
+                .retrievalSpecificConfig(new PollingConfig(kinesisAsyncClient));
+*/
+
         var scheduler = new Scheduler(
                 configsBuilder.checkpointConfig(),
                 coordinatorConfig,
@@ -59,7 +69,7 @@ public class KinesisConsumerConfig {
                 configsBuilder.lifecycleConfig(),
                 configsBuilder.metricsConfig().metricsLevel(MetricsLevel.DETAILED),
                 configsBuilder.processorConfig(),
-                configsBuilder.retrievalConfig()
+                retrievalConfig
         );
 
         ExecutorService executorService = Executors.newSingleThreadExecutor();
