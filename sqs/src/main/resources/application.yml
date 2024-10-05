@@ -8,3 +8,5 @@ aws:
   sqs:
     name: _your_queue_name_
     url: _your_queue_url_
+  sns:
+    arn: _your_sns_arn_

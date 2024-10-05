@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 public class EventConsumer {
 
     @SqsListener("${aws.sqs.name}")
-    public void eventConsumer(Message<String> message) {
-        log.info("Message received: {}", message.getPayload());
+    public void eventConsumer(String rawMessage) {
+        log.info("Message received: {}", rawMessage);
     }
 }

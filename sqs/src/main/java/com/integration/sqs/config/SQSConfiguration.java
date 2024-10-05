@@ -64,5 +64,4 @@ public class SQSConfiguration {
         });
         return taskExecutor;
     }
-
 }
