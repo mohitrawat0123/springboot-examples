@@ -2,7 +2,6 @@ package com.integration.sqs.consumer;
 
 import io.awspring.cloud.sqs.annotation.SqsListener;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.messaging.Message;
 import org.springframework.stereotype.Component;
 
 /**
