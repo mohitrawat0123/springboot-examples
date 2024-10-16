@@ -8,6 +8,7 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
+import software.amazon.awssdk.services.kinesis.KinesisClient;
 
 /**
  * @author mohit.rawat
@@ -17,6 +18,14 @@ public class AWSClient {
 
     @Value("${aws.region.static}")
     private String awsRegion;
+
+    @Bean
+    public KinesisClient kinesisClient() {
+        return KinesisClient.builder()
+                .region(Region.of(awsRegion))
+                .credentialsProvider(DefaultCredentialsProvider.create())
+                .build();
+    }
 
     @Bean
     public KinesisAsyncClient kinesisAsyncClient() {

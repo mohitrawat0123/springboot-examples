@@ -7,15 +7,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.core.SdkBytes;
-import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
+import software.amazon.awssdk.services.kinesis.KinesisClient;
 import software.amazon.awssdk.services.kinesis.model.PutRecordRequest;
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequest;
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
 
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.Random;
-import java.util.concurrent.ExecutionException;
+import java.util.*;
 import java.util.stream.IntStream;
 
 /**
@@ -32,7 +29,7 @@ public class KinesisProducer {
     @Value("${spring.application.batchingEnabled}")
     private Boolean batchingEnabled;
 
-    private final KinesisAsyncClient kinesisAsyncClient;
+    private final KinesisClient kinesisClient;
 
     private static final String dummyDataTemplate = """
             {
@@ -40,20 +37,15 @@ public class KinesisProducer {
             }
             """;
 
-    public boolean addEvent(String partitionKey, String data) {
+    public void addEvent(String partitionKey, String data) {
         var putRecordRequest = PutRecordRequest.builder()
                 .partitionKey(partitionKey)
                 .streamName(streamName)
                 .data(SdkBytes.fromByteArray(data.getBytes()))
                 .build();
-        try {
-            kinesisAsyncClient.putRecord(putRecordRequest).get();
-            log.info("Added into Kinesis...");
-        } catch (InterruptedException | ExecutionException ex) {
-            log.error("Exception occurred. Ex: ", ex);
-            return false;
-        }
-        return true;
+
+        kinesisClient.putRecord(putRecordRequest);
+        log.info("Added into Kinesis...");
     }
 
     public void addEvents(Map<String, String> data) {
@@ -62,18 +54,14 @@ public class KinesisProducer {
                         .partitionKey(entry.getKey())
                         .data(SdkBytes.fromByteArray(entry.getValue().getBytes()))
                         .build()).toList();
-        try {
-            kinesisAsyncClient.putRecords(PutRecordsRequest.builder()
-                    .records(putRecordsRequestList)
-                    .streamName(streamName)
-                    .build()).get();
-            log.info("Added batch into Kinesis...");
-        } catch (InterruptedException | ExecutionException ex) {
-            log.error("Exception occurred. Ex: ", ex);
-        }
+        kinesisClient.putRecords(PutRecordsRequest.builder()
+                .records(putRecordsRequestList)
+                .streamName(streamName)
+                .build());
+        log.info("Added batch into Kinesis...");
     }
 
-    @Scheduled(fixedRate = 120000)
+    @Scheduled(fixedRate = 60000)
     public void scheduledProducer() {
         if (BooleanUtils.isTrue(batchingEnabled)) {
             addDummyEventsInBatches();
@@ -92,37 +80,23 @@ public class KinesisProducer {
                     .partitionKey(pk)
                     .data(SdkBytes.fromByteArray(data.getBytes()))
                     .build();
-            try {
-                kinesisAsyncClient.putRecord(request).get();
-                log.info("Added into Kinesis...");
-            } catch (InterruptedException | ExecutionException ex) {
-                log.error("Exception occurred. Ex: ", ex);
-            }
+            kinesisClient.putRecord(request);
+            log.info("Added into Kinesis...");
         });
     }
 
     private void addDummyEventsInBatches() {
-        var putRecordsRequestList = new ArrayList<PutRecordsRequestEntry>();
-
+        var putRecordRequestEntries = new ArrayList<PutRecordsRequestEntry>();
         IntStream.range(0, 500).forEach(itr -> {
             var randNum = new Random().nextInt(39) + 1;
             var pk = String.valueOf(randNum);
             var data = dummyDataTemplate.replace("{id}", pk).replace("{bin}", Integer.toBinaryString(randNum));
-            var request = PutRecordsRequestEntry.builder()
+            putRecordRequestEntries.add(PutRecordsRequestEntry.builder()
                     .partitionKey(pk)
                     .data(SdkBytes.fromByteArray(data.getBytes()))
-                    .build();
-            putRecordsRequestList.add(request);
+                    .build());
         });
-
-        try {
-            kinesisAsyncClient.putRecords(PutRecordsRequest.builder()
-                    .records(putRecordsRequestList)
-                    .streamName(streamName)
-                    .build()).get();
-            log.info("Added batch into Kinesis...");
-        } catch (InterruptedException | ExecutionException ex) {
-            log.error("Exception occurred. Ex: ", ex);
-        }
+        kinesisClient.putRecords(PutRecordsRequest.builder().streamName(streamName).records(putRecordRequestEntries).build());
+        log.info("Added batch into Kinesis...");
     }
 }

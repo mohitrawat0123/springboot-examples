@@ -26,9 +26,7 @@ public class DevController {
 
     @PostMapping("/send")
     public ResponseEntity<?> addEvent(@Valid @RequestBody EventRequestDTO requestDTO) {
-        if (!kinesisProducer.addEvent(requestDTO.getPartitionKey(), requestDTO.getData())) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Pls check logs...");
-        }
+        kinesisProducer.addEvent(requestDTO.getPartitionKey(), requestDTO.getData());
         return ResponseEntity.ok("Event sent successfully.");
     }
 
